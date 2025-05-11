@@ -358,8 +358,15 @@ void Map::SetLastMapChange(int currentChangeId)
 
 void Map::PreSave(std::set<GeometricCamera*> &spCams)
 {
+    cout << "PreSave: Starting function" << endl;
+
     int nMPWithoutObs = 0;
-    for(MapPoint* pMPi : mspMapPoints)
+
+    std::set<MapPoint*> tmp_mspMapPoints1;
+    tmp_mspMapPoints1.insert(mspMapPoints.begin(), mspMapPoints.end());
+    cout << "PreSave: Copied mspMapPoints to tmp_mspMapPoints1" << endl;
+
+    for(MapPoint* pMPi : tmp_mspMapPoints1)
     {
         if(!pMPi || pMPi->isBad())
             continue;
@@ -371,26 +378,45 @@ void Map::PreSave(std::set<GeometricCamera*> &spCams)
         map<KeyFrame*, std::tuple<int,int>> mpObs = pMPi->GetObservations();
         for(map<KeyFrame*, std::tuple<int,int>>::iterator it= mpObs.begin(), end=mpObs.end(); it!=end; ++it)
         {
+            if(it->first == nullptr)
+            {
+                cout << "PreSave: Null KeyFrame pointer in observations" << endl;
+                continue;
+            }
+
             if(it->first->GetMap() != this || it->first->isBad())
             {
                 pMPi->EraseObservation(it->first);
             }
-
         }
     }
+    cout << "PreSave: Processed MapPoints observations" << endl;
 
     // Saves the id of KF origins
     mvBackupKeyFrameOriginsId.clear();
     mvBackupKeyFrameOriginsId.reserve(mvpKeyFrameOrigins.size());
+    cout << "PreSave: Cleared and reserved mvBackupKeyFrameOriginsId" << endl;
+
     for(int i = 0, numEl = mvpKeyFrameOrigins.size(); i < numEl; ++i)
     {
+        if(mvpKeyFrameOrigins[i] == nullptr)
+        {
+            cout << "PreSave: Null KeyFrame pointer in mvpKeyFrameOrigins at index " << i << endl;
+            continue;
+        }
         mvBackupKeyFrameOriginsId.push_back(mvpKeyFrameOrigins[i]->mnId);
     }
-
+    cout << "PreSave: Saved KeyFrame origins IDs" << endl;
 
     // Backup of MapPoints
     mvpBackupMapPoints.clear();
-    for(MapPoint* pMPi : mspMapPoints)
+    cout << "PreSave: Cleared mvpBackupMapPoints" << endl;
+
+    std::set<MapPoint*> tmp_mspMapPoints2;
+    tmp_mspMapPoints2.insert(mspMapPoints.begin(), mspMapPoints.end());
+    cout << "PreSave: Copied mspMapPoints to tmp_mspMapPoints2" << endl;
+
+    for(MapPoint* pMPi : tmp_mspMapPoints2)
     {
         if(!pMPi || pMPi->isBad())
             continue;
@@ -398,9 +424,12 @@ void Map::PreSave(std::set<GeometricCamera*> &spCams)
         mvpBackupMapPoints.push_back(pMPi);
         pMPi->PreSave(mspKeyFrames,mspMapPoints);
     }
+    cout << "PreSave: Backed up MapPoints" << endl;
 
     // Backup of KeyFrames
     mvpBackupKeyFrames.clear();
+    cout << "PreSave: Cleared mvpBackupKeyFrames" << endl;
+
     for(KeyFrame* pKFi : mspKeyFrames)
     {
         if(!pKFi || pKFi->isBad())
@@ -409,19 +438,23 @@ void Map::PreSave(std::set<GeometricCamera*> &spCams)
         mvpBackupKeyFrames.push_back(pKFi);
         pKFi->PreSave(mspKeyFrames,mspMapPoints, spCams);
     }
+    cout << "PreSave: Backed up KeyFrames" << endl;
 
     mnBackupKFinitialID = -1;
     if(mpKFinitial)
     {
         mnBackupKFinitialID = mpKFinitial->mnId;
     }
+    cout << "PreSave: Set mnBackupKFinitialID to " << mnBackupKFinitialID << endl;
 
     mnBackupKFlowerID = -1;
     if(mpKFlowerID)
     {
         mnBackupKFlowerID = mpKFlowerID->mnId;
     }
+    cout << "PreSave: Set mnBackupKFlowerID to " << mnBackupKFlowerID << endl;
 
+    cout << "PreSave: Finished function" << endl;
 }
 
 void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, map<unsigned int, GeometricCamera*> &mpCams)

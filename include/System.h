@@ -186,6 +186,8 @@ public:
 
     float GetImageScale();
 
+    void SavePointCloud(const string &filename);
+
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);
     void InsertResizeTime(double& time);
